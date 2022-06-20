@@ -1,6 +1,6 @@
 # Multi-arch Docker Example
 
-Example of using `docker buildx bake` to build multi-arch container images.
+Example of to build multi-arch container images with `docker buildx bake` and GitHub Actions.
 
 The final image will be available for multi-arch:
 
@@ -15,7 +15,7 @@ The final image will be available for multi-arch:
 - windows/amd64
 - windows/arm64
 - freebsd/amd64
-- freebsd/arm64"
+- freebsd/arm64
 
 You can try it for yourself.
 
