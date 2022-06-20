@@ -1,8 +1,6 @@
 name: ci
 
 on:
-  schedule:
-    - cron: "0 8 */6 * *" # every 6 days
   push:
     branches:
       - main
@@ -19,64 +17,30 @@ jobs:
         GO_VERSION: ["1.18"]
     env:
       GO_VERSION: ${{ matrix.GO_VERSION }}
+    
+    # https://docs.github.com/en/actions/reference/authentication-in-a-workflow
+    permissions:
+      packages: write
+      contents: read
+
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Checkout
         uses: actions/checkout@v2
+
+      - uses: docker/login-action@bb984efc561711aaa26e433c32c3521176eae55b # v1.13.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
       - name: Build
         run: |
           docker buildx bake
       - name: Test
         run: |
           docker buildx bake test
-      - name: Linters
-        run: |
-          docker buildx bake lint validate-gomod validate-shfmt
       - name: Cross
         run: |
-          docker buildx bake cross
-
-  # test-macos:
-  #   runs-on: macos-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       go:
-  #         - 1.18
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v2
-  #       with:
-  #         go-version: ${{ matrix.go }}
-  #     - name: Cache Go modules
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: ~/go/pkg/mod
-  #         key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-go-${{ matrix.go }}-
-  #     - name: Test
-  #       run: |
-  #         go test ./...
-
-  # test-freebsd-amd64:
-  #   runs-on: macos-10.15
-  #   env:
-  #     VAGRANT_VAGRANTFILE: hack/Vagrantfile.freebsd13
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #     - name: Cache Vagrant boxes
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: ~/.vagrant.d/boxes
-  #         key: ${{ runner.os }}-vagrant-${{ hashFiles('hack/Vagrantfile.freebsd13') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-vagrant-
-  #     - name: Set up vagrant
-  #       run: vagrant up
-  #     - name: Test
-  #       run: vagrant ssh -- "cd /vagrant; go test -buildvcs=false ./..."
+          docker buildx bake cross --push
